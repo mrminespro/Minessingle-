@@ -1,0 +1,86 @@
+import random
+import requests
+import time
+import json
+
+# --- Configuration ---
+bot_token = '7553715054:AAESkj-Ru9-g2SyiizAUH-PlgOFQyqOmXpE'
+channel = '@MINESPRODUCTOIN'
+interval_seconds = 180  # 3 minutes
+
+# --- Stats ---
+total_predictions = 0
+total_wins = 0
+total_losses = 0
+
+# --- Generate Mines Grid (5x5 with 3 to 5 mines) ---
+def generate_mines_message():
+    grid_size = 5
+    stars_count = random.choice([3, 4, 5])
+    grid = [['🟦' for _ in range(grid_size)] for _ in range(grid_size)]
+
+    placed = 0
+    while placed < stars_count:
+        x, y = random.randint(0, grid_size - 1), random.randint(0, grid_size - 1)
+        if grid[x][y] == '🟦':
+            grid[x][y] = '⭐'
+            placed += 1
+
+    return '\n'.join([''.join(row) for row in grid]), stars_count
+
+# --- Send Telegram Message with Inline Buttons ---
+def send_telegram_message_with_button(chat_id, message):
+    url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
+    payload = {
+        'chat_id': chat_id,
+        'text': message,
+        'parse_mode': 'Markdown',
+        'reply_markup': json.dumps({
+            'inline_keyboard': [
+                [{'text': '🔗🌟 OPEN MINES HERE', 'url': 'https://www.in333.in/#/register?invitationCode=71666609644'}],
+                [{'text': '📈 JOIN VIP GROUP', 'url': 'https://t.me/MINEPROHACK'}],
+                [{'text': '🧪 Try Demo', 'url': 'https://sites.google.com/view/minesgamedemo-/home'}],
+                [{'text': '⚡ BUY ACCESS', 'url': 'https://payments.cashfree.com/forms?code=Minesaccess'}]
+            ]
+        })
+    }
+    headers = {'User-Agent': 'TelegramBot'}
+    return requests.post(url, headers=headers, json=payload)
+
+# --- Main Loop ---
+if __name__ == '__main__':
+    while True:
+        try:
+            grid, mines = generate_mines_message()
+            result = random.choice(['win', 'loss'])
+
+            total_predictions += 1
+            if result == 'win':
+                total_wins += 1
+            else:
+                total_losses += 1
+
+            message = f'''
+💣 *Mines Prediction #{total_predictions}*
+🔢 Mode: `{mines} Mines Strategy`
+🕒 Valid for 3 Minutes
+
+{grid}
+
+✅ Total Predictions: {total_predictions}
+🏆 Wins: {total_wins}
+❌ Losses: {total_losses}
+
+⚠️ Play only on safe platforms below 👇
+            '''.strip()
+
+            response = send_telegram_message_with_button(channel, message)
+            if response.ok:
+                print(f'✅ Prediction #{total_predictions} sent successfully.')
+            else:
+                print(f'❌ Failed to send: {response.status_code} - {response.text}')
+
+        except Exception as e:
+            print(f'⚠️ Error: {e}')
+
+        time.sleep(interval_seconds)
